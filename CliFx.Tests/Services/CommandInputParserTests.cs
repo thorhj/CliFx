@@ -142,12 +142,12 @@ namespace CliFx.Tests.Services
 
             yield return new TestCaseData(
                 new[] {"command"},
-                new CommandInput("command")
+                new CommandInput(new [] { "command" })
             );
 
             yield return new TestCaseData(
                 new[] {"command", "--option", "value"},
-                new CommandInput("command", new[]
+                new CommandInput(new [] { "command" }, new[]
                 {
                     new CommandOptionInput("option", "value")
                 })
@@ -155,12 +155,12 @@ namespace CliFx.Tests.Services
 
             yield return new TestCaseData(
                 new[] {"long", "command", "name"},
-                new CommandInput("long command name")
+                new CommandInput(new [] { "long command name" })
             );
 
             yield return new TestCaseData(
                 new[] {"long", "command", "name", "--option", "value"},
-                new CommandInput("long command name", new[]
+                new CommandInput(new [] { "long command name" }, new[]
                 {
                     new CommandOptionInput("option", "value")
                 })
@@ -192,7 +192,7 @@ namespace CliFx.Tests.Services
 
             yield return new TestCaseData(
                 new[] {"command", "[debug]", "[preview]", "-o", "value"},
-                new CommandInput("command",
+                new CommandInput(new [] { "command" },
                     new[] {"debug", "preview"},
                     new[]
                     {

@@ -25,7 +25,8 @@ namespace CliFx.Tests.Services
                                 "dividend", 'D', true, "The number to divide."),
                             new CommandOptionSchema(typeof(DivideCommand).GetProperty(nameof(DivideCommand.Divisor)),
                                 "divisor", 'd', true, "The number to divide by.")
-                        }),
+                        },
+                        new CommandArgumentSchema[0]),
                     new CommandSchema(typeof(ConcatCommand), "concat", "Concatenate strings.",
                         new[]
                         {
@@ -33,7 +34,8 @@ namespace CliFx.Tests.Services
                                 null, 'i', true, "Input strings."),
                             new CommandOptionSchema(typeof(ConcatCommand).GetProperty(nameof(ConcatCommand.Separator)),
                                 null, 's', false, "String separator.")
-                        })
+                        },
+                        new CommandArgumentSchema[0])
                 }
             );
 
@@ -41,7 +43,7 @@ namespace CliFx.Tests.Services
                 new[] {typeof(HelloWorldDefaultCommand)},
                 new[]
                 {
-                    new CommandSchema(typeof(HelloWorldDefaultCommand), null, null, new CommandOptionSchema[0])
+                    new CommandSchema(typeof(HelloWorldDefaultCommand), null, null, new CommandOptionSchema[0], new CommandArgumentSchema[0])
                 }
             );
         }
@@ -85,7 +87,7 @@ namespace CliFx.Tests.Services
             IReadOnlyList<CommandSchema> expectedCommandSchemas)
         {
             // Arrange
-            var commandSchemaResolver = new CommandSchemaResolver();
+            var commandSchemaResolver = new CommandSchemaResolver(new CommandSchemaValidator());
 
             // Act
             var commandSchemas = commandSchemaResolver.GetCommandSchemas(commandTypes);
@@ -99,7 +101,7 @@ namespace CliFx.Tests.Services
         public void GetCommandSchemas_Negative_Test(IReadOnlyList<Type> commandTypes)
         {
             // Arrange
-            var resolver = new CommandSchemaResolver();
+            var resolver = new CommandSchemaResolver(new CommandSchemaValidator());
 
             // Act & Assert
             resolver.Invoking(r => r.GetCommandSchemas(commandTypes))

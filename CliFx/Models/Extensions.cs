@@ -105,7 +105,7 @@ namespace CliFx.Models
         public static bool IsCommandSpecified(this CommandInput commandInput)
         {
             commandInput.GuardNotNull(nameof(commandInput));
-            return !commandInput.CommandName.IsNullOrWhiteSpace();
+            return commandInput.UnboundArguments.Any();
         }
 
         /// <summary>

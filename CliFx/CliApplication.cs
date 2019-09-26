@@ -74,7 +74,7 @@ namespace CliFx
                 return null;
 
             // Render command name
-            _console.Output.WriteLine($"Command name: {commandInput.CommandName}");
+            _console.Output.WriteLine($"Command name: {commandInput.UnboundArguments}");
             _console.Output.WriteLine();
 
             // Render directives
@@ -136,19 +136,9 @@ namespace CliFx
                 if (commandInput.IsCommandSpecified())
                 {
                     _console.WithForegroundColor(ConsoleColor.Red,
-                        () => _console.Error.WriteLine($"Specified command [{commandInput.CommandName}] is not defined."));
+                        () => _console.Error.WriteLine($"Specified command [{commandInput.UnboundArguments}] is not defined."));
 
                     isError = true;
-                }
-
-                // Replace target command with closest parent of specified command
-                targetCommandSchema = availableCommandSchemas.FindParent(commandInput.CommandName);
-
-                // If there's no parent, replace with stub default command
-                if (targetCommandSchema == null)
-                {
-                    targetCommandSchema = CommandSchema.StubDefaultCommand;
-                    availableCommandSchemas = availableCommandSchemas.Concat(CommandSchema.StubDefaultCommand).ToArray();
                 }
             }
 
@@ -191,7 +181,7 @@ namespace CliFx
                 var availableCommandSchemas = _commandSchemaResolver.GetCommandSchemas(_configuration.CommandTypes);
 
                 // Find command schema matching the name specified in the input
-                var targetCommandSchema = availableCommandSchemas.FindByName(commandInput.CommandName);
+                var targetCommandSchema = _commandSchemaResolver.GetCommandSchemaFromUnboundArguments(commandInput.UnboundArguments, availableCommandSchemas);
 
                 // Chain handlers until the first one that produces an exit code
                 return

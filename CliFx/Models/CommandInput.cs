@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using CliFx.Internal;
 
@@ -10,10 +11,10 @@ namespace CliFx.Models
     public partial class CommandInput
     {
         /// <summary>
-        /// Specified command name.
-        /// Can be null if command was not specified.
+        /// Arguments not bound to directives or options.
+        /// These arguments may be part of the command name or positional arguments.
         /// </summary>
-        public string CommandName { get; }
+        public IReadOnlyList<string> UnboundArguments { get; }
 
         /// <summary>
         /// Specified directives.
@@ -28,9 +29,9 @@ namespace CliFx.Models
         /// <summary>
         /// Initializes an instance of <see cref="CommandInput"/>.
         /// </summary>
-        public CommandInput(string commandName, IReadOnlyList<string> directives, IReadOnlyList<CommandOptionInput> options)
+        public CommandInput(IEnumerable<string> unboundArguments, IReadOnlyList<string> directives, IReadOnlyList<CommandOptionInput> options)
         {
-            CommandName = commandName; // can be null
+            UnboundArguments = new List<string>(unboundArguments ?? Enumerable.Empty<string>());
             Directives = directives.GuardNotNull(nameof(directives));
             Options = options.GuardNotNull(nameof(options));
         }
@@ -38,8 +39,8 @@ namespace CliFx.Models
         /// <summary>
         /// Initializes an instance of <see cref="CommandInput"/>.
         /// </summary>
-        public CommandInput(string commandName, IReadOnlyList<CommandOptionInput> options)
-            : this(commandName, EmptyDirectives, options)
+        public CommandInput(IEnumerable<string> unboundArguments, IReadOnlyList<CommandOptionInput> options)
+            : this(unboundArguments, EmptyDirectives, options)
         {
         }
 
@@ -54,8 +55,8 @@ namespace CliFx.Models
         /// <summary>
         /// Initializes an instance of <see cref="CommandInput"/>.
         /// </summary>
-        public CommandInput(string commandName)
-            : this(commandName, EmptyOptions)
+        public CommandInput(IEnumerable<string> unboundArguments)
+            : this(unboundArguments, EmptyOptions)
         {
         }
 
@@ -64,8 +65,8 @@ namespace CliFx.Models
         {
             var buffer = new StringBuilder();
 
-            if (!CommandName.IsNullOrWhiteSpace())
-                buffer.Append(CommandName);
+            if (UnboundArguments?.Count > 0)
+                buffer.Append(string.Join(" ", UnboundArguments));
 
             foreach (var directive in Directives)
             {

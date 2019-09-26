@@ -17,7 +17,7 @@ namespace CliFx.Services
         {
             commandLineArguments.GuardNotNull(nameof(commandLineArguments));
 
-            var commandNameBuilder = new StringBuilder();
+            var unboundArguments = new List<string>();
             var directives = new List<string>();
             var optionsDic = new Dictionary<string, List<string>>();
 
@@ -63,8 +63,7 @@ namespace CliFx.Services
                     }
                     else
                     {
-                        commandNameBuilder.AppendIfNotEmpty(' ');
-                        commandNameBuilder.Append(commandLineArgument);
+                        unboundArguments.Add(commandLineArgument);
                     }
                 }
 
@@ -75,10 +74,9 @@ namespace CliFx.Services
                 }
             }
 
-            var commandName = commandNameBuilder.Length > 0 ? commandNameBuilder.ToString() : null;
             var options = optionsDic.Select(p => new CommandOptionInput(p.Key, p.Value)).ToArray();
 
-            return new CommandInput(commandName, directives, options);
+            return new CommandInput(unboundArguments, directives, options);
         }
     }
 }

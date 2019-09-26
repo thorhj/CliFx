@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
@@ -9,24 +10,24 @@ using CliFx.Models;
 namespace CliFx.Services
 {
     /// <summary>
-    /// Default implementation of <see cref="ICommandOptionInputConverter"/>.
+    /// Default implementation of <see cref="ICommandInputConverter"/>.
     /// </summary>
-    public partial class CommandOptionInputConverter : ICommandOptionInputConverter
+    public partial class CommandInputConverter : ICommandInputConverter
     {
         private readonly IFormatProvider _formatProvider;
 
         /// <summary>
-        /// Initializes an instance of <see cref="CommandOptionInputConverter"/>.
+        /// Initializes an instance of <see cref="CommandInputConverter"/>.
         /// </summary>
-        public CommandOptionInputConverter(IFormatProvider formatProvider)
+        public CommandInputConverter(IFormatProvider formatProvider)
         {
             _formatProvider = formatProvider.GuardNotNull(nameof(formatProvider));
         }
 
         /// <summary>
-        /// Initializes an instance of <see cref="CommandOptionInputConverter"/>.
+        /// Initializes an instance of <see cref="CommandInputConverter"/>.
         /// </summary>
-        public CommandOptionInputConverter()
+        public CommandInputConverter()
             : this(CultureInfo.InvariantCulture)
         {
         }
@@ -143,9 +144,9 @@ namespace CliFx.Services
         }
 
         /// <inheritdoc />
-        public virtual object ConvertOptionInput(CommandOptionInput optionInput, Type targetType)
+        public virtual object ConvertInputValues(IReadOnlyList<string> inputValues, Type targetType)
         {
-            optionInput.GuardNotNull(nameof(optionInput));
+            inputValues.GuardNotNull(nameof(inputValues));
             targetType.GuardNotNull(nameof(targetType));
 
             // Get the underlying type of IEnumerable<T> if it's implemented by the target type.
@@ -156,22 +157,22 @@ namespace CliFx.Services
             if (enumerableUnderlyingType == null)
             {
                 // Throw if provided with more than 1 value
-                if (optionInput.Values.Count > 1)
+                if (inputValues.Count > 1)
                 {
                     throw new CliFxException(
-                        $"Can't convert a sequence of values [{optionInput.Values.JoinToString(", ")}] " +
+                        $"Can't convert a sequence of values [{inputValues.JoinToString(", ")}] " +
                         $"to non-enumerable type [{targetType}].");
                 }
 
                 // Retrieve a single value and convert
-                var value = optionInput.Values.SingleOrDefault();
+                var value = inputValues.SingleOrDefault();
                 return ConvertValue(value, targetType);
             }
             // Convert to an enumerable type
             else
             {
                 // Convert values to the underlying enumerable type and cast it to dynamic array
-                var convertedValues = optionInput.Values
+                var convertedValues = inputValues
                     .Select(v => ConvertValue(v, enumerableUnderlyingType))
                     .ToNonGenericArray(enumerableUnderlyingType);
 
@@ -189,13 +190,13 @@ namespace CliFx.Services
 
                 // Throw if we can't find a way to convert the values
                 throw new CliFxException(
-                    $"Can't convert a sequence of values [{optionInput.Values.JoinToString(", ")}] " +
+                    $"Can't convert a sequence of values [{inputValues.JoinToString(", ")}] " +
                     $"to type [{targetType}].");
             }
         }
     }
 
-    public partial class CommandOptionInputConverter
+    public partial class CommandInputConverter
     {
         private static ConstructorInfo GetStringConstructor(Type type) => type.GetConstructor(new[] {typeof(string)});
 

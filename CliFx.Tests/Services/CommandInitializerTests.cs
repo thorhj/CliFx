@@ -14,14 +14,14 @@ namespace CliFx.Tests.Services
     public class CommandInitializerTests
     {
         private static CommandSchema GetCommandSchema(Type commandType) =>
-            new CommandSchemaResolver().GetCommandSchemas(new[] {commandType}).Single();
+            new CommandSchemaResolver(new CommandSchemaValidator()).GetCommandSchemas(new[] {commandType}).Single();
 
         private static IEnumerable<TestCaseData> GetTestCases_InitializeCommand()
         {
             yield return new TestCaseData(
                 new DivideCommand(),
                 GetCommandSchema(typeof(DivideCommand)),
-                new CommandInput("div", new[]
+                new CommandInput(new [] { "div" }, new[]
                 {
                     new CommandOptionInput("dividend", "13"),
                     new CommandOptionInput("divisor", "8")
@@ -32,7 +32,7 @@ namespace CliFx.Tests.Services
             yield return new TestCaseData(
                 new DivideCommand(),
                 GetCommandSchema(typeof(DivideCommand)),
-                new CommandInput("div", new[]
+                new CommandInput(new [] { "div" }, new[]
                 {
                     new CommandOptionInput("dividend", "13"),
                     new CommandOptionInput("d", "8")
@@ -43,7 +43,7 @@ namespace CliFx.Tests.Services
             yield return new TestCaseData(
                 new DivideCommand(),
                 GetCommandSchema(typeof(DivideCommand)),
-                new CommandInput("div", new[]
+                new CommandInput(new [] { "div" }, new[]
                 {
                     new CommandOptionInput("D", "13"),
                     new CommandOptionInput("d", "8")
@@ -54,7 +54,7 @@ namespace CliFx.Tests.Services
             yield return new TestCaseData(
                 new ConcatCommand(),
                 GetCommandSchema(typeof(ConcatCommand)),
-                new CommandInput("concat", new[]
+                new CommandInput(new [] { "concat" }, new[]
                 {
                     new CommandOptionInput("i", new[] {"foo", " ", "bar"})
                 }),
@@ -64,7 +64,7 @@ namespace CliFx.Tests.Services
             yield return new TestCaseData(
                 new ConcatCommand(),
                 GetCommandSchema(typeof(ConcatCommand)),
-                new CommandInput("concat", new[]
+                new CommandInput(new [] { "concat" }, new[]
                 {
                     new CommandOptionInput("i", new[] {"foo", "bar"}),
                     new CommandOptionInput("s", " ")
@@ -78,13 +78,13 @@ namespace CliFx.Tests.Services
             yield return new TestCaseData(
                 new DivideCommand(),
                 GetCommandSchema(typeof(DivideCommand)),
-                new CommandInput("div")
+                new CommandInput(new [] { "div" })
             );
 
             yield return new TestCaseData(
                 new DivideCommand(),
                 GetCommandSchema(typeof(DivideCommand)),
-                new CommandInput("div", new[]
+                new CommandInput(new [] { "div" }, new[]
                 {
                     new CommandOptionInput("D", "13")
                 })
@@ -93,13 +93,13 @@ namespace CliFx.Tests.Services
             yield return new TestCaseData(
                 new ConcatCommand(),
                 GetCommandSchema(typeof(ConcatCommand)),
-                new CommandInput("concat")
+                new CommandInput(new [] { "concat" })
             );
 
             yield return new TestCaseData(
                 new ConcatCommand(),
                 GetCommandSchema(typeof(ConcatCommand)),
-                new CommandInput("concat", new[]
+                new CommandInput(new [] { "concat" }, new[]
                 {
                     new CommandOptionInput("s", "_")
                 })
@@ -129,8 +129,15 @@ namespace CliFx.Tests.Services
             var initializer = new CommandInitializer();
 
             // Act & Assert
-            initializer.Invoking(i => i.InitializeCommand(command, commandSchema, commandInput))
-                .Should().ThrowExactly<CliFxException>();
+            try
+            {
+                initializer.Invoking(i => i.InitializeCommand(command, commandSchema, commandInput)) .Should().ThrowExactly<CliFxException>();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
         }
     }
 }

@@ -25,7 +25,7 @@ namespace CliFx
         private string _description;
         private IConsole _console;
         private ICommandFactory _commandFactory;
-        private ICommandOptionInputConverter _commandOptionInputConverter;
+        private ICommandInputConverter _commandInputConverter;
 
         /// <inheritdoc />
         public ICliApplicationBuilder AddCommand(Type commandType)
@@ -110,9 +110,9 @@ namespace CliFx
         }
 
         /// <inheritdoc />
-        public ICliApplicationBuilder UseCommandOptionInputConverter(ICommandOptionInputConverter converter)
+        public ICliApplicationBuilder UseCommandOptionInputConverter(ICommandInputConverter converter)
         {
-            _commandOptionInputConverter = converter.GuardNotNull(nameof(converter));
+            _commandInputConverter = converter.GuardNotNull(nameof(converter));
             return this;
         }
 
@@ -125,15 +125,15 @@ namespace CliFx
             _versionText = _versionText ?? GetDefaultVersionText() ?? "v1.0";
             _console = _console ?? new SystemConsole();
             _commandFactory = _commandFactory ?? new CommandFactory();
-            _commandOptionInputConverter = _commandOptionInputConverter ?? new CommandOptionInputConverter();
+            _commandInputConverter = _commandInputConverter ?? new CommandInputConverter();
 
             // Project parameters to expected types
             var metadata = new ApplicationMetadata(_title, _executableName, _versionText, _description);
             var configuration = new ApplicationConfiguration(_commandTypes.ToArray(), _isDebugModeAllowed, _isPreviewModeAllowed);
 
             return new CliApplication(metadata, configuration,
-                _console, new CommandInputParser(), new CommandSchemaResolver(),
-                _commandFactory, new CommandInitializer(_commandOptionInputConverter), new HelpTextRenderer());
+                _console, new CommandInputParser(), new CommandSchemaResolver(new CommandSchemaValidator()),
+                _commandFactory, new CommandInitializer(_commandInputConverter), new HelpTextRenderer());
         }
     }
 

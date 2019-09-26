@@ -14,6 +14,41 @@ namespace CliFx.Services
     /// </summary>
     public class CommandSchemaResolver : ICommandSchemaResolver
     {
+        private readonly ICommandSchemaValidator _commandSchemaValidator;
+
+        /// <summary>
+        /// Initializes an instance of <see cref="CommandSchemaResolver"/>.
+        /// </summary>
+        public CommandSchemaResolver(ICommandSchemaValidator commandSchemaValidator)
+        {
+            _commandSchemaValidator = commandSchemaValidator;
+        }
+
+        private IReadOnlyList<CommandArgumentSchema> GetCommandArgumentSchemas(Type commandType)
+        {
+            var result = new List<CommandArgumentSchema>();
+
+            foreach (var property in commandType.GetProperties())
+            {
+                var attribute = property.GetCustomAttribute<CommandArgumentAttribute>();
+
+                // If an attribute is not set, then it's not an argument so we just skip it
+                if (attribute is null)
+                    continue;
+
+                // Build argument schema
+                var argumentSchema = new CommandArgumentSchema(property,
+                    attribute.Name,
+                    attribute.IsRequired,
+                    attribute.Description,
+                    attribute.Order);
+
+                result.Add(argumentSchema);
+            }
+
+            return result;
+        }
+
         private IReadOnlyList<CommandOptionSchema> GetCommandOptionSchemas(Type commandType)
         {
             var result = new List<CommandOptionSchema>();
@@ -33,35 +68,20 @@ namespace CliFx.Services
                     attribute.IsRequired,
                     attribute.Description);
 
-                // Make sure there are no other options with the same name
-                var existingOptionWithSameName = result
-                    .Where(o => !o.Name.IsNullOrWhiteSpace())
-                    .FirstOrDefault(o => string.Equals(o.Name, optionSchema.Name, StringComparison.OrdinalIgnoreCase));
-
-                if (existingOptionWithSameName != null)
-                {
-                    throw new CliFxException(
-                        $"Command type [{commandType}] has options defined with the same name: " +
-                        $"[{existingOptionWithSameName.Property}] and [{optionSchema.Property}].");
-                }
-
-                // Make sure there are no other options with the same short name
-                var existingOptionWithSameShortName = result
-                    .Where(o => o.ShortName != null)
-                    .FirstOrDefault(o => o.ShortName == optionSchema.ShortName);
-
-                if (existingOptionWithSameShortName != null)
-                {
-                    throw new CliFxException(
-                        $"Command type [{commandType}] has options defined with the same short name: " +
-                        $"[{existingOptionWithSameShortName.Property}] and [{optionSchema.Property}].");
-                }
-
                 // Add schema to list
                 result.Add(optionSchema);
             }
 
             return result;
+        }
+
+        /// <inheritdoc />
+        public CommandSchema GetCommandSchemaFromUnboundArguments(IReadOnlyCollection<string> unboundArguments, IReadOnlyCollection<CommandSchema> availableCommandSchemas)
+        {
+            var unboundArgumentsString = string.Join(" ", unboundArguments);
+            var mostSpecificSchema = availableCommandSchemas.OrderByDescending(schema => schema.Name)
+                .FirstOrDefault(schema => unboundArgumentsString.StartsWith(schema.Name));
+            return mostSpecificSchema;
         }
 
         /// <inheritdoc />
@@ -96,12 +116,14 @@ namespace CliFx.Services
 
                 // Get option schemas
                 var optionSchemas = GetCommandOptionSchemas(commandType);
+                var argumentSchemas = GetCommandArgumentSchemas(commandType);
 
                 // Build command schema
                 var commandSchema = new CommandSchema(commandType,
                     attribute.Name,
                     attribute.Description,
-                    optionSchemas);
+                    optionSchemas,
+                    argumentSchemas);
 
                 // Make sure there are no other commands with the same name
                 var existingCommandWithSameName = result
@@ -112,6 +134,8 @@ namespace CliFx.Services
                     throw new CliFxException(
                         $"Command type [{existingCommandWithSameName.Type}] has the same name as another command type [{commandType}].");
                 }
+
+                _commandSchemaValidator.ValidateCommandSchema(commandType, commandSchema);
 
                 // Add schema to list
                 result.Add(commandSchema);
